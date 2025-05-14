@@ -9,12 +9,16 @@ const DashboardUser = () => {
   const { data: notes, isLoading: notesLoading } = useGetNotesQuery();
   const { userInfo } = useSelector((state) => state.auth);
 
+  // Filter notes only if userInfo is available
+  const userNotes = notes?.filter(note => 
+    note?.uploadedBy?._id === userInfo?._id
+  ) || [];
+
   return (
     <div className="container">
       <h1 className="section-title">User Dashboard</h1>
       
       <div className="dashboard-columns">
-        {/* Tests Section */}
         <div className="dashboard-card">
           <div className="card-header">
             <h2>Recent Tests</h2>
@@ -32,7 +36,7 @@ const DashboardUser = () => {
                     {test.title}
                   </Link>
                   <div className="card-meta">
-                    {test.questions.length} questions • {test.duration} mins
+                    {test.questions?.length || 0} questions • {test.duration || 30} mins
                   </div>
                 </li>
               ))}
@@ -40,7 +44,6 @@ const DashboardUser = () => {
           )}
         </div>
 
-        {/* Notes Section */}
         <div className="dashboard-card">
           <div className="card-header">
             <h2>Your Notes</h2>
@@ -52,21 +55,17 @@ const DashboardUser = () => {
             <div>Loading notes...</div>
           ) : (
             <ul className="card-list">
-              {notes
-                ?.filter((note) => note.uploadedBy._id === userInfo?._id)
-                .slice(0, 3)
-                .map((note) => (
-                  <li key={note._id}>
-                    <Link to="/notes" className="card-link">
-                      {note.title}
-                    </Link>
-                    <div className="card-meta">
-                      {new Date(note.createdAt).toLocaleDateString()}
-                    </div>
-                  </li>
-                ))}
-              {notes?.filter((note) => note.uploadedBy._id === userInfo?._id)
-                .length === 0 && (
+              {userNotes.slice(0, 3).map((note) => (
+                <li key={note._id}>
+                  <Link to={`/notes/${note._id}`} className="card-link">
+                    {note.title}
+                  </Link>
+                  <div className="card-meta">
+                    {new Date(note.createdAt).toLocaleDateString()}
+                  </div>
+                </li>
+              ))}
+              {userNotes.length === 0 && (
                 <li className="empty-message">You haven't created any notes yet</li>
               )}
             </ul>
@@ -74,7 +73,6 @@ const DashboardUser = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
       <div className="dashboard-card">
         <h2 className="card-title">Quick Actions</h2>
         <div className="action-grid">

@@ -27,8 +27,11 @@ const Navbar = () => {
           {userInfo && <Link to="/game">Quiz Game</Link>}
           {userInfo && <Link to="/notes">Notes</Link>}
           <Link to="/news">News</Link>
-          {userInfo && userInfo.role === 'admin' && (
-            <Link to="/admin/dashboard">Admin Dashboard</Link>
+          {userInfo?.role === 'admin' && (
+            <>
+              <Link to="/admin/dashboard">Admin Dashboard</Link>
+              <Link to="/admin/users">User Management</Link>
+            </>
           )}
           {userInfo && <Link to="/dashboard">My Dashboard</Link>}
         </nav>

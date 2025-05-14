@@ -18,24 +18,23 @@ const DashboardAdmin = () => {
       <div className="dashboard-grid">
         <div className="dashboard-card bg-blue">
           <h3>Total Tests</h3>
-          <p>{testsLoading ? '...' : tests?.length}</p>
+          <p>{testsLoading ? '...' : tests?.length || 0}</p>
         </div>
         <div className="dashboard-card bg-green">
           <h3>Total Notes</h3>
-          <p>{notesLoading ? '...' : notes?.length}</p>
+          <p>{notesLoading ? '...' : notes?.length || 0}</p>
         </div>
         <div className="dashboard-card bg-purple">
           <h3>News Items</h3>
-          <p>{newsLoading ? '...' : news?.length}</p>
+          <p>{newsLoading ? '...' : news?.length || 0}</p>
         </div>
         <div className="dashboard-card bg-yellow">
           <h3>Registered Users</h3>
-          <p>{usersLoading ? '...' : users?.length}</p>
+          <p>{usersLoading ? '...' : users?.length || 0}</p>
         </div>
       </div>
 
       <div className="dashboard-columns">
-        {/* Recent Tests */}
         <div className="dashboard-card">
           <div className="card-header">
             <h2>Recent Tests</h2>
@@ -53,7 +52,7 @@ const DashboardAdmin = () => {
                     {test.title}
                   </Link>
                   <div className="card-meta">
-                    Created by: {test.createdBy.name}
+                    Created by: {test?.createdBy?.name || 'Unknown'}
                   </div>
                 </li>
               ))}
@@ -61,7 +60,6 @@ const DashboardAdmin = () => {
           )}
         </div>
 
-        {/* Recent News */}
         <div className="dashboard-card">
           <div className="card-header">
             <h2>Recent News</h2>
@@ -88,7 +86,6 @@ const DashboardAdmin = () => {
         </div>
       </div>
 
-      {/* Admin Actions */}
       <div className="dashboard-card">
         <h2 className="card-title">Admin Actions</h2>
         <div className="action-grid">
@@ -100,6 +97,9 @@ const DashboardAdmin = () => {
           </Link>
           <Link to="/news" className="action-card bg-purple">
             Manage News
+          </Link>
+          <Link to="/admin/users" className="action-card bg-yellow">
+            Manage Users
           </Link>
         </div>
       </div>

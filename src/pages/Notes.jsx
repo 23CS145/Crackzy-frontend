@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useGetNotesQuery, useCreateNoteMutation, useDeleteNoteMutation } from '../slices/notesApiSlice';
+import { 
+  useGetNotesQuery, 
+  useCreateNoteMutation, 
+  useUpdateNoteMutation,
+  useDeleteNoteMutation 
+} from '../slices/notesApiSlice';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
+import { Link } from 'react-router-dom';
 
 const Notes = () => {
   const { data: notes, isLoading, error, refetch } = useGetNotesQuery();
   const [createNote, { isLoading: isCreating }] = useCreateNoteMutation();
+  const [updateNote, { isLoading: isUpdating }] = useUpdateNoteMutation();
   const [deleteNote, { isLoading: isDeleting }] = useDeleteNoteMutation();
   
   const { userInfo } = useSelector((state) => state.auth);
@@ -14,6 +21,7 @@ const Notes = () => {
   const [content, setContent] = useState('');
   const [fileUrl, setFileUrl] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState(null);
 
   useEffect(() => {
     refetch();
@@ -22,12 +30,14 @@ const Notes = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createNote({ title, content, fileUrl }).unwrap();
-      toast.success('Note created successfully');
-      setTitle('');
-      setContent('');
-      setFileUrl('');
-      setShowForm(false);
+      if (editingNoteId) {
+        await updateNote({ id: editingNoteId, title, content, fileUrl }).unwrap();
+        toast.success('Note updated successfully');
+      } else {
+        await createNote({ title, content, fileUrl }).unwrap();
+        toast.success('Note created successfully');
+      }
+      resetForm();
       refetch();
     } catch (err) {
       toast.error(err?.data?.message || err.error);
@@ -46,12 +56,35 @@ const Notes = () => {
     }
   };
 
+  const resetForm = () => {
+    setTitle('');
+    setContent('');
+    setFileUrl('');
+    setShowForm(false);
+    setEditingNoteId(null);
+  };
+
+  const handleEdit = (note) => {
+    setTitle(note.title);
+    setContent(note.content);
+    setFileUrl(note.fileUrl || '');
+    setEditingNoteId(note._id);
+    setShowForm(true);
+  };
+
+  const canEditNote = (note) => {
+    return userInfo && (userInfo.role === 'admin' || userInfo._id === note?.uploadedBy?._id);
+  };
+
   return (
     <div className="container">
       <div className="page-header">
         <h1>Study Notes</h1>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            resetForm();
+            setShowForm(!showForm);
+          }}
           className="btn"
         >
           {showForm ? 'Cancel' : 'Add New Note'}
@@ -60,7 +93,7 @@ const Notes = () => {
 
       {showForm && (
         <div className="form-card">
-          <h2>Create New Note</h2>
+          <h2>{editingNoteId ? 'Edit Note' : 'Create New Note'}</h2>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label htmlFor="title">Title</label>
@@ -94,10 +127,12 @@ const Notes = () => {
             </div>
             <button
               type="submit"
-              disabled={isCreating}
+              disabled={isCreating || isUpdating}
               className="btn btn-success"
             >
-              {isCreating ? 'Creating...' : 'Create Note'}
+              {isCreating || isUpdating 
+                ? (editingNoteId ? 'Updating...' : 'Creating...') 
+                : (editingNoteId ? 'Update Note' : 'Create Note')}
             </button>
           </form>
         </div>
@@ -109,7 +144,7 @@ const Notes = () => {
         <div className="error-message">Error: {error.message}</div>
       ) : (
         <div className="notes-grid">
-          {notes?.map((note) => (
+          {notes?.filter(note => note).map((note) => (
             <div key={note._id} className="note-card">
               <div className="note-content">
                 <h2>{note.title}</h2>
@@ -129,29 +164,29 @@ const Notes = () => {
                   </a>
                 )}
                 <div className="note-meta">
-                  Uploaded by: {note.uploadedBy.name}
+                  Uploaded by: {note?.uploadedBy?.name || 'Unknown'}
                 </div>
               </div>
               <div className="note-actions">
-                <button
-                  onClick={() => {
-                    setTitle(note.title);
-                    setContent(note.content);
-                    setFileUrl(note.fileUrl || '');
-                    setShowForm(true);
-                  }}
-                  className="btn btn-outline"
-                  disabled={note.uploadedBy._id !== userInfo?._id}
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(note._id)}
-                  className="btn btn-danger"
-                  disabled={note.uploadedBy._id !== userInfo?._id && userInfo?.role !== 'admin'}
-                >
-                  {isDeleting ? 'Deleting...' : 'Delete'}
-                </button>
+                <Link to={`/notes/${note._id}`} className="btn btn-outline">
+                  View
+                </Link>
+                {canEditNote(note) && (
+                  <>
+                    <button
+                      onClick={() => handleEdit(note)}
+                      className="btn btn-outline"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(note._id)}
+                      className="btn btn-danger"
+                    >
+                      {isDeleting ? 'Deleting...' : 'Delete'}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}

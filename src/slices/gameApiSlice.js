@@ -4,6 +4,7 @@ export const gameApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getQuizQuestions: builder.query({
       query: () => '/game/quiz',
+      providesTags: ['Quiz'],
     }),
     submitQuizAnswers: builder.mutation({
       query: (data) => ({
@@ -11,9 +12,28 @@ export const gameApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body: data,
       }),
+      invalidatesTags: ['QuizResult'],
+    }),
+    getQuizResults: builder.query({
+      query: ({ page = 1, limit = 10 } = {}) => ({
+        url: '/game/results',
+        params: { page, limit },
+      }),
+      providesTags: ['QuizResult'],
+      transformResponse: (response) => ({
+        results: response.data,
+        pagination: {
+          page: response.page,
+          pages: response.pages,
+          total: response.total,
+        },
+      }),
     }),
   }),
 });
 
-export const { useGetQuizQuestionsQuery, useSubmitQuizAnswersMutation } =
-  gameApiSlice;
+export const { 
+  useGetQuizQuestionsQuery, 
+  useSubmitQuizAnswersMutation,
+  useGetQuizResultsQuery
+} = gameApiSlice;

@@ -11,5 +11,3 @@ export const store = configureStore({
     getDefaultMiddleware().concat(apiSlice.middleware),
   devTools: true,
 });
-
-// No default export needed now

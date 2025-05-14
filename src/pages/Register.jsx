@@ -10,6 +10,8 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('user');
+  const [adminSecret, setAdminSecret] = useState('');
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -20,15 +22,22 @@ const Register = () => {
     e.preventDefault();
     if (password !== confirmPassword) {
       toast.error('Passwords do not match');
-    } else {
-      try {
-        const res = await register({ name, email, password }).unwrap();
-        dispatch(setCredentials({ ...res }));
-        navigate('/dashboard');
-        toast.success('Registration successful');
-      } catch (err) {
-        toast.error(err?.data?.message || err.error);
-      }
+      return;
+    }
+
+    try {
+      const res = await register({ 
+        name, 
+        email, 
+        password,
+        role,
+        adminSecret: role === 'admin' ? adminSecret : undefined
+      }).unwrap();
+      dispatch(setCredentials({ ...res }));
+      navigate('/dashboard');
+      toast.success('Registration successful');
+    } catch (err) {
+      toast.error(err?.data?.message || err.error);
     }
   };
 
@@ -100,7 +109,34 @@ const Register = () => {
             placeholder="Confirm Password"
           />
         </div>
-
+        <div className="form-group">
+          <label htmlFor="role">Account Type</label>
+          <select
+            id="role"
+            name="role"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="form-control"
+          >
+            <option value="user">Regular User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        {role === 'admin' && (
+          <div className="form-group">
+            <label htmlFor="adminSecret">Admin Secret Key</label>
+            <input
+              id="adminSecret"
+              name="adminSecret"
+              type="password"
+              required
+              value={adminSecret}
+              onChange={(e) => setAdminSecret(e.target.value)}
+              className="form-control"
+              placeholder="Enter admin secret key"
+            />
+          </div>
+        )}
         <button
           type="submit"
           disabled={isLoading}

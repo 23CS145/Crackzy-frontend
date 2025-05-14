@@ -15,6 +15,7 @@ import DashboardAdmin from './pages/DashboardAdmin';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import TestDetails from './pages/TestDetails';
+import UserManagement from './pages/UserManagement';
 import './index.css';
 
 function App() {
@@ -44,6 +45,9 @@ function App() {
               <Route path="/admin/dashboard" element={<AdminRoute />}>
                 <Route path="/admin/dashboard" element={<DashboardAdmin />} />
               </Route>
+              <Route path="/admin/users" element={<AdminRoute />}>
+                <Route path="/admin/users" element={<UserManagement />} />
+              </Route>
             </Routes>
           </div>
         </main>
@@ -52,5 +56,4 @@ function App() {
     </Router>
   );
 }
-
 export default App;
