@@ -18,13 +18,13 @@ const Navbar = () => {
     <header>
       <div className="container navbar">
         <Link to="/" className="logo">
-          MockTest Platform
+          Crackzy
         </Link>
 
         <nav className="nav-links">
           <Link to="/">Home</Link>
           <Link to="/tests">Tests</Link>
-          {userInfo && <Link to="/game">Quiz Game</Link>}
+          {userInfo && <Link to="/games">Games</Link>}
           {userInfo && <Link to="/notes">Notes</Link>}
           <Link to="/news">News</Link>
           {userInfo?.role === 'admin' && (

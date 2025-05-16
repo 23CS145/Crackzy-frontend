@@ -1,33 +1,35 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import {
-  useGetQuizQuestionsQuery,
-  useSubmitQuizAnswersMutation,
-  useGetQuizResultsQuery,
+  useGetGamesQuery,
+  useSubmitGameResultsMutation,
+  useGetGameResultsQuery,
 } from '../slices/gameApiSlice';
 import { useSelector } from 'react-redux';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 
 const Game = () => {
   const [searchParams] = useSearchParams();
   const category = searchParams.get('category');
+  const type = searchParams.get('type') || 'quiz';
   
   const { userInfo } = useSelector((state) => state.auth);
-  const { data: questionsData, isLoading, error, refetch } = useGetQuizQuestionsQuery({ category });
-  const [submitQuiz, { isLoading: isSubmitting }] = useSubmitQuizAnswersMutation();
-  const { data: resultsData } = useGetQuizResultsQuery({ limit: 5 });
+  const { data: gamesData, isLoading, error, refetch } = useGetGamesQuery({ category, type });
+  const [submitGame, { isLoading: isSubmitting }] = useSubmitGameResultsMutation();
+  const { data: resultsData } = useGetGameResultsQuery({ limit: 5 });
 
-  const questions = questionsData?.data || [];
+  const games = gamesData?.data || [];
   const previousResults = resultsData?.data || [];
 
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentGameIndex, setCurrentGameIndex] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState({});
   const [showResults, setShowResults] = useState(false);
-  const [quizResults, setQuizResults] = useState(null);
+  const [gameResults, setGameResults] = useState(null);
+  const [matchedPairs, setMatchedPairs] = useState([]);
 
   useEffect(() => {
     refetch();
-  }, [refetch, category]);
+  }, [refetch, category, type]);
 
   const handleOptionSelect = (questionIndex, optionIndex) => {
     setSelectedOptions({
@@ -36,202 +38,276 @@ const Game = () => {
     });
   };
 
-  const handleSubmitQuiz = async () => {
-    if (Object.keys(selectedOptions).length !== questions.length) {
+  const handlePairSelect = (index) => {
+    if (matchedPairs.includes(index)) return;
+    
+    setMatchedPairs([...matchedPairs, index]);
+  };
+
+  const handleSubmitGame = async () => {
+    if (type === 'quiz' && Object.keys(selectedOptions).length !== games[currentGameIndex]?.questions?.length) {
       toast.warning('Please answer all questions before submitting');
       return;
     }
   
     try {
-      const answers = questions.map((question, index) => ({
-        questionId: question._id.toString(),
-        selectedOption: selectedOptions[index]
-      }));
+      let results;
+      if (type === 'quiz') {
+        const answers = games[currentGameIndex].questions.map((question, index) => ({
+          questionId: question._id.toString(),
+          selectedOption: selectedOptions[index]
+        }));
 
-      const results = await submitQuiz({ answers }).unwrap();
-      setQuizResults(results.data);
+        results = await submitGame({ 
+          gameId: games[currentGameIndex]._id,
+          gameType: 'quiz',
+          answers 
+        }).unwrap();
+      } else if (type === 'match') {
+        const totalPairs = games[currentGameIndex]?.pairs?.length || 0;
+        results = await submitGame({
+          gameId: games[currentGameIndex]._id,
+          gameType: 'match',
+          pairsMatched: matchedPairs.length,
+          totalPairs
+        }).unwrap();
+      }
+
+      setGameResults(results.data);
       setShowResults(true);
     } catch (err) {
-      toast.error(err?.data?.error || err.error || 'Failed to submit quiz');
+      toast.error(err?.data?.error || err.error || 'Failed to submit game');
     }
   };
 
-  const resetQuiz = () => {
-    setCurrentQuestionIndex(0);
+  const resetGame = () => {
+    setCurrentGameIndex(0);
     setSelectedOptions({});
+    setMatchedPairs([]);
     setShowResults(false);
-    setQuizResults(null);
+    setGameResults(null);
     refetch();
   };
 
-  if (isLoading) return <div className="loading-message">Loading quiz...</div>;
-  if (error) return <div className="error-message">Error: {error.error || 'Failed to load quiz'}</div>;
+  if (isLoading) return <div className="loading-message">Loading game...</div>;
+  if (error) return <div className="error-message">Error: {error.error || 'Failed to load game'}</div>;
+  if (!games.length) return <div className="error-message">No games found for this category</div>;
+
+  const currentGame = games[currentGameIndex];
 
   return (
-    <div className="quiz-container">
-      <div className="quiz-header">
-        <h1 className="quiz-title">
-          {category ? `${category.toUpperCase()} Quiz` : 'General Knowledge Quiz'}
+    <div className="game-container">
+      <div className="game-header">
+        <h1 className="game-title">
+          {category ? `${category.toUpperCase()} ${type.charAt(0).toUpperCase() + type.slice(1)} Game` : 'General Knowledge Game'}
         </h1>
-        <div className="quiz-category-selector">
-          <a 
-            href="/game" 
+        <div className="game-category-selector">
+          <Link 
+            to="/games" 
             className={!category ? 'active' : ''}
           >
             All Categories
-          </a>
-          <a 
-            href="/game?category=rbi" 
+          </Link>
+          <Link 
+            to="/games?category=rbi" 
             className={category === 'rbi' ? 'active' : ''}
           >
             RBI
-          </a>
-          <a 
-            href="/game?category=sbi" 
+          </Link>
+          <Link 
+            to="/games?category=sbi" 
             className={category === 'sbi' ? 'active' : ''}
           >
             SBI
-          </a>
-          <a 
-            href="/game?category=ibps" 
+          </Link>
+          <Link 
+            to="/games?category=ibps" 
             className={category === 'ibps' ? 'active' : ''}
           >
             IBPS
-          </a>
-          <a 
-            href="/game?category=rrb" 
+          </Link>
+          <Link 
+            to="/games?category=rrb" 
             className={category === 'rrb' ? 'active' : ''}
           >
             RRB
-          </a>
-          <a 
-            href="/game?category=ssc" 
+          </Link>
+          <Link 
+            to="/games?category=ssc" 
             className={category === 'ssc' ? 'active' : ''}
           >
             SSC
-          </a>
-          <a 
-            href="/game?category=upsc" 
+          </Link>
+          <Link 
+            to="/games?category=upsc" 
             className={category === 'upsc' ? 'active' : ''}
           >
             UPSC
-          </a>
+          </Link>
+        </div>
+        <div className="game-type-selector">
+          <Link 
+            to={`/games${category ? `?category=${category}&type=quiz` : '?type=quiz'}`}
+            className={type === 'quiz' ? 'active' : ''}
+          >
+            Quiz
+          </Link>
+          <Link 
+            to={`/games${category ? `?category=${category}&type=match` : '?type=match'}`}
+            className={type === 'match' ? 'active' : ''}
+          >
+            Match
+          </Link>
+          <Link 
+            to={`/games${category ? `?category=${category}&type=memory` : '?type=memory'}`}
+            className={type === 'memory' ? 'active' : ''}
+          >
+            Memory
+          </Link>
         </div>
       </div>
 
       {!showResults ? (
-        <div className="quiz-card">
-          <div className="quiz-header">
-            <h2>
-              Question {currentQuestionIndex + 1} of {questions?.length}
-            </h2>
-            <div className="quiz-navigation">
-              {currentQuestionIndex > 0 && (
+        <div className="game-card">
+          <div className="game-header">
+            <h2>{currentGame.title}</h2>
+            <div className="game-meta">
+              <span className={`difficulty-badge ${currentGame.difficulty?.toLowerCase()}`}>
+                {currentGame.difficulty}
+              </span>
+              <span className="game-category">
+                {currentGame.category}
+              </span>
+            </div>
+            <p className="game-description">{currentGame.description}</p>
+          </div>
+
+          {type === 'quiz' && (
+            <div className="quiz-section">
+              {currentGame.questions?.map((question, qIndex) => (
+                <div key={qIndex} className="quiz-question">
+                  <h3>Question {qIndex + 1}: {question.questionText}</h3>
+                  <div className="quiz-options">
+                    {question.options.map((option, oIndex) => (
+                      <div
+                        key={oIndex}
+                        className={`quiz-option ${
+                          selectedOptions[qIndex] === oIndex ? 'selected' : ''
+                        }`}
+                        onClick={() => handleOptionSelect(qIndex, oIndex)}
+                      >
+                        {option.optionText}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {type === 'match' && (
+            <div className="match-section">
+              <h3>Match the following:</h3>
+              <div className="pairs-grid">
+                {currentGame.pairs?.map((pair, index) => (
+                  <div 
+                    key={index} 
+                    className={`pair-card ${matchedPairs.includes(index) ? 'matched' : ''}`}
+                    onClick={() => handlePairSelect(index)}
+                  >
+                    {matchedPairs.includes(index) ? (
+                      <>
+                        <div className="term">{pair.term}</div>
+                        <div className="definition">{pair.definition}</div>
+                      </>
+                    ) : (
+                      <div className="placeholder">Click to reveal</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="game-footer">
+            <div className="game-navigation">
+              {currentGameIndex > 0 && (
                 <button
-                  onClick={() => setCurrentQuestionIndex(currentQuestionIndex - 1)}
+                  onClick={() => setCurrentGameIndex(currentGameIndex - 1)}
                   className="btn btn-outline"
                 >
                   Previous
                 </button>
               )}
-              {currentQuestionIndex < questions?.length - 1 ? (
+              {currentGameIndex < games.length - 1 ? (
                 <button
-                  onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
+                  onClick={() => setCurrentGameIndex(currentGameIndex + 1)}
                   className="btn"
                 >
                   Next
                 </button>
               ) : (
                 <button
-                  onClick={handleSubmitQuiz}
+                  onClick={handleSubmitGame}
                   disabled={isSubmitting}
                   className="btn btn-success"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit Quiz'}
+                  {isSubmitting ? 'Submitting...' : 'Submit Game'}
                 </button>
               )}
             </div>
           </div>
-
-          <div className="quiz-question">
-            <div className="question-meta">
-              <span className="question-category">{questions[currentQuestionIndex]?.category}</span>
-              <span className={`question-difficulty ${questions[currentQuestionIndex]?.difficulty?.toLowerCase()}`}>
-                {questions[currentQuestionIndex]?.difficulty}
-              </span>
-            </div>
-            <h3>{questions[currentQuestionIndex]?.questionText}</h3>
-            <div className="quiz-options">
-              {questions[currentQuestionIndex]?.options.map((option, optionIndex) => (
-                <div
-                  key={optionIndex}
-                  className={`quiz-option ${
-                    selectedOptions[currentQuestionIndex] === optionIndex ? 'selected' : ''
-                  }`}
-                  onClick={() => handleOptionSelect(currentQuestionIndex, optionIndex)}
-                >
-                  {option.optionText}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="quiz-pagination">
-            {questions.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentQuestionIndex(index)}
-                className={`pagination-dot ${
-                  selectedOptions[index] !== undefined ? 'answered' : ''
-                } ${currentQuestionIndex === index ? 'active' : ''}`}
-              >
-                {index + 1}
-              </button>
-            ))}
-          </div>
         </div>
       ) : (
         <div className="results-card">
-          <h2>Quiz Results</h2>
-          {quizResults && (
+          <h2>Game Results</h2>
+          {gameResults && (
             <>
               <div className="results-score">
-                <div>{quizResults.score} / {quizResults.totalQuestions}</div>
-                <div>{quizResults.percentage}%</div>
+                <div>{gameResults.score} / {gameResults.totalQuestions || gameResults.totalPairs}</div>
+                <div>{gameResults.percentage}%</div>
               </div>
 
-              <div className="results-details">
-                {quizResults.results.map((result, index) => (
-                  <div
-                    key={index}
-                    className={`result-item ${result.isCorrect ? 'correct' : 'incorrect'}`}
-                  >
-                    <h3>Question {index + 1}: {result.questionText}</h3>
-                    <div>
-                      <span>Your answer:</span>{' '}
-                      <span className={result.isCorrect ? 'correct-text' : 'incorrect-text'}>
-                        {result.selectedOption}
-                      </span>
-                    </div>
-                    {!result.isCorrect && (
+              {type === 'quiz' && (
+                <div className="results-details">
+                  {gameResults.results.map((result, index) => (
+                    <div
+                      key={index}
+                      className={`result-item ${result.isCorrect ? 'correct' : 'incorrect'}`}
+                    >
+                      <h3>Question {index + 1}: {result.questionText}</h3>
                       <div>
-                        <span>Correct answer:</span>{' '}
-                        <span className="correct-text">{result.correctOption}</span>
+                        <span>Your answer:</span>{' '}
+                        <span className={result.isCorrect ? 'correct-text' : 'incorrect-text'}>
+                          {result.selectedOption}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                      {!result.isCorrect && (
+                        <div>
+                          <span>Correct answer:</span>{' '}
+                          <span className="correct-text">{result.correctOption}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {type === 'match' && (
+                <div className="results-details">
+                  <h3>You matched {gameResults.pairsMatched} out of {gameResults.totalPairs} pairs</h3>
+                </div>
+              )}
             </>
           )}
 
           <div className="results-actions">
-            <button onClick={resetQuiz} className="btn">
+            <button onClick={resetGame} className="btn">
               Play Again
             </button>
-            <a href={`/game${category ? `?category=${category}` : ''}`} className="btn btn-outline">
-              New Quiz
-            </a>
+            <Link to={`/games${category ? `?category=${category}&type=${type}` : `?type=${type}`}`} className="btn btn-outline">
+              New Game
+            </Link>
           </div>
         </div>
       )}
@@ -242,9 +318,9 @@ const Game = () => {
           <ul>
             {previousResults.map((result, index) => (
               <li key={index}>
-                {result.score}/{result.totalQuestions} ({result.percentage}%) -{' '}
+                {result.game?.title || 'Game'} - {result.score}/{result.totalQuestions || result.totalPairs} ({result.percentage}%) -{' '}
                 {new Date(result.createdAt).toLocaleDateString()}
-                {result.category && ` - ${result.category.toUpperCase()}`}
+                {result.game?.category && ` - ${result.game.category.toUpperCase()}`}
               </li>
             ))}
           </ul>

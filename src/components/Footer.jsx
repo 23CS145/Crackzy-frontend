@@ -5,7 +5,7 @@ const Footer = () => {
       <div className="container">
         <div className="footer-content">
           <div className="footer-column">
-            <h3>MockTest Platform</h3>
+            <h3>Crackzy</h3>
             <p>Prepare for your exams with confidence.</p>
           </div>
           <div className="footer-column">
@@ -25,7 +25,7 @@ const Footer = () => {
           </div>
         </div>
         <div className="copyright">
-          &copy; {new Date().getFullYear()} MockTest Platform. All rights reserved.
+          &copy; {new Date().getFullYear()} Crackzy. All rights reserved.
         </div>
       </div>
     </footer>

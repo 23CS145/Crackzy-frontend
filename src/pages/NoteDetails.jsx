@@ -8,10 +8,12 @@ const NoteDetails = () => {
   const { data: note, isLoading, error } = useGetNoteByIdQuery(id);
   const { userInfo } = useSelector((state) => state.auth);
 
-  const canEditNote = note && userInfo && (userInfo.role === 'admin' || userInfo._id === note.uploadedBy._id);
-
   if (isLoading) return <div>Loading note...</div>;
   if (error) return <div>Error: {error.message}</div>;
+  if (!note) return <div>No note found.</div>;
+
+  // Ensure that uploadedBy is defined before trying to access its properties
+  const canEditNote = userInfo && note.uploadedBy && (userInfo.role === 'admin' || userInfo._id === note.uploadedBy._id);
 
   return (
     <div className="container">
@@ -19,7 +21,11 @@ const NoteDetails = () => {
         <div className="note-header">
           <h1>{note.title}</h1>
           <div className="note-meta">
-            <span>Uploaded by: {note.uploadedBy.name}</span>
+            {note.uploadedBy ? (
+              <span>Uploaded by: {note.uploadedBy.name}</span>
+            ) : (
+              <span>Uploader information not available</span>
+            )}
             <span>
               {new Date(note.createdAt).toLocaleDateString('en-US', {
                 year: 'numeric',

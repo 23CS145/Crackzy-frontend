@@ -3,8 +3,25 @@ import { apiSlice } from './apiSlice';
 export const newsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getNews: builder.query({
-      query: () => '/news',
+      query: ({ category } = {}) => {
+        const params = {};
+        if (category) {
+          params.category = category;
+        }
+        return {
+          url: '/news',
+          params
+        };
+      },
       providesTags: ['News'],
+    }),
+    getNewsById: builder.query({
+      query: (id) => `/news/${id}`,
+      providesTags: (result, error, id) => [{ type: 'News', id }],
+    }),
+    getNewsCategories: builder.query({
+      query: () => '/news/categories',
+      providesTags: ['NewsCategories'],
     }),
     createNews: builder.mutation({
       query: (data) => ({
@@ -13,6 +30,14 @@ export const newsApiSlice = apiSlice.injectEndpoints({
         body: data,
       }),
       invalidatesTags: ['News'],
+    }),
+    updateNews: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `/news/${id}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'News', id }],
     }),
     deleteNews: builder.mutation({
       query: (id) => ({
@@ -26,6 +51,9 @@ export const newsApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useGetNewsQuery,
+  useGetNewsByIdQuery,
+  useGetNewsCategoriesQuery,
   useCreateNewsMutation,
+  useUpdateNewsMutation,
   useDeleteNewsMutation,
 } = newsApiSlice;

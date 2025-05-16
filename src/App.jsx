@@ -16,6 +16,8 @@ import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import TestDetails from './pages/TestDetails';
 import UserManagement from './pages/UserManagement';
+import NewsDetails from './pages/NewsDetails';
+import NoteDetails from './pages/NoteDetails';
 import './index.css';
 
 function App() {
@@ -32,13 +34,16 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/tests" element={<Tests />} />
               <Route path="/tests/:id" element={<TestDetails />} />
-              <Route path="/game" element={<PrivateRoute />}>
-                <Route path="/game" element={<Game />} />
+              {/* Updated from /game to /games */}
+              <Route path="/games" element={<PrivateRoute />}>
+                <Route path="/games" element={<Game />} />
               </Route>
               <Route path="/notes" element={<PrivateRoute />}>
                 <Route path="/notes" element={<Notes />} />
               </Route>
+              <Route path="/notes/:id" element={<NoteDetails />} />
               <Route path="/news" element={<News />} />
+              <Route path="/news/:id" element={<NewsDetails />} />
               <Route path="/dashboard" element={<PrivateRoute />}>
                 <Route path="/dashboard" element={<DashboardUser />} />
               </Route>
@@ -56,4 +61,5 @@ function App() {
     </Router>
   );
 }
+
 export default App;

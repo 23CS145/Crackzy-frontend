@@ -1,39 +1,44 @@
 import { apiSlice } from './apiSlice';
 
-export const gameApiSlice = apiSlice.injectEndpoints({
+export const gamesApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getQuizQuestions: builder.query({
-      query: () => '/game/quiz',
-      providesTags: ['Quiz'],
+    getGames: builder.query({
+      query: ({ category, type } = {}) => {
+        const params = {};
+        if (category) params.category = category;
+        if (type) params.type = type;
+        return {
+          url: '/games',
+          params
+        };
+      },
+      providesTags: ['Games'],
     }),
-    submitQuizAnswers: builder.mutation({
+    getGameById: builder.query({
+      query: (id) => `/games/${id}`,
+      providesTags: (result, error, id) => [{ type: 'Games', id }],
+    }),
+    submitGameResults: builder.mutation({
       query: (data) => ({
-        url: '/game/quiz',
+        url: '/games/results',
         method: 'POST',
         body: data,
       }),
-      invalidatesTags: ['QuizResult'],
+      invalidatesTags: ['GameResults'],
     }),
-    getQuizResults: builder.query({
+    getGameResults: builder.query({
       query: ({ page = 1, limit = 10 } = {}) => ({
-        url: '/game/results',
+        url: '/games/results',
         params: { page, limit },
       }),
-      providesTags: ['QuizResult'],
-      transformResponse: (response) => ({
-        results: response.data,
-        pagination: {
-          page: response.page,
-          pages: response.pages,
-          total: response.total,
-        },
-      }),
+      providesTags: ['GameResults'],
     }),
   }),
 });
 
 export const { 
-  useGetQuizQuestionsQuery, 
-  useSubmitQuizAnswersMutation,
-  useGetQuizResultsQuery
-} = gameApiSlice;
+  useGetGamesQuery, 
+  useGetGameByIdQuery,
+  useSubmitGameResultsMutation,
+  useGetGameResultsQuery 
+} = gamesApiSlice;

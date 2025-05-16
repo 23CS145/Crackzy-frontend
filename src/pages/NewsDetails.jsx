@@ -1,11 +1,11 @@
 import { useParams } from 'react-router-dom';
-import { useGetNewsItemQuery } from '../slices/newsApiSlice';
+import { useGetNewsByIdQuery } from '../slices/newsApiSlice';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 const NewsDetails = () => {
   const { id } = useParams();
-  const { data: newsItem, isLoading, error } = useGetNewsItemQuery(id);
+  const { data: newsItem, isLoading, error } = useGetNewsByIdQuery(id);
   const { userInfo } = useSelector((state) => state.auth);
 
   if (isLoading) return <div>Loading news...</div>;
