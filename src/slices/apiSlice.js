@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: 'http://localhost:5000/api', // Ensure this matches your backend
+  baseUrl: 'https://crackzy-backend.onrender.com/api', // Ensure this matches your backend
   prepareHeaders: (headers, { getState }) => {
     const token = getState().auth.userInfo?.token;
     if (token) {
